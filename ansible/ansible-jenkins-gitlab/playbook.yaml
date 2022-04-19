@@ -1,0 +1,147 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Fix docker permissions
+      command: "usermod -aG docker $USER"
+
+    - name: Fix docker permissions
+      command: "chmod 666 /var/run/docker.sock"
+
+    - name: Download Jenkins repo apt URL for
+      apt_key:
+        url: "https://pkg.jenkins.io/debian-stable/jenkins.io.key"
+        state: present 
+      become: true
+
+    - name: Ensure the repository is configured 
+      apt_repository: repo='deb https://pkg.jenkins.io/debian-stable binary/' state=present
+      become: true
+
+    - name: Update apt cache
+      apt: 
+        update_cache: yes
+        state: latest
+
+    - name: Install Java
+      apt:
+        name: "openjdk-11-jdk"
+        state: present 
+
+    # - name: Creates directory
+    #   file:
+    #     path: ./datajenkins
+    #     state: directory
+
+    # - name: Pull default Docker image
+    #   docker_image:
+    #     name: "jenkins/jenkins:lts"
+    #     source: pull
+    # - name: command install jenkins
+    #   command: bash -c "sudo docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):$(which docker) -v `pwd`/datajenkins:/var/jenkins_home -e JAVA_OPTS="hudson.security.csrf.GlobalCrumbIssuerConfiguration.DISABLE_CSRF_PROTECTION=true" -p 8080:8080 --user 0:0 --name jenkins-sv -d jenkins/jenkins:lts"
+
+    - name: Install Jenkins
+      apt: 
+        name: jenkins
+        state: latest
+
+    - name: Start Jenkins
+      service:
+        name: jenkins
+        enabled: true
+        state: started
+
+    # - name: create slave folder
+    #   file:
+    #     path: /home/jenkins
+    #     state: directory
+    # - name: add permission to slave folder
+    #   command: "chmod -R 777 /home/jenkins"
+    - name: Get jenkins password
+      ansible.builtin.command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_password
+    - debug:
+        var: jenkins_password
+        
+    - name: Creates directory gitlab
+      file:
+        path: 
+          - /config-gl
+          - /logs-gl
+          - /data-gl
+        state: directory
+
+    - name: Pull image gitlab-ce
+      docker_image:
+        name: gitlab/gitlab-ce:latest
+        source: pull
+
+    - name: command install gitlab
+      command: bash -c "sudo docker run --detach --hostname gitlab.vandung.me --publish 8081:443 --publish 8082:80 --publish 8083:22 --name gitlab-sv --volume /config-gl/config:/etc/gitlab --volume /logs-gl/logs:/var/log/gitlab --volume /data-gl/data:/var/opt/gitlab gitlab/gitlab-ce:latest"
+    
+    - name: sleep wait
+      command: /bin/sleep 40
+
+    - name: cat pass gitlab
+      command: bash -c "sudo docker exec -it gitlab-sv grep 'Password:' /etc/gitlab/initial_root_password"
+      register: pass_git
+
+    - debug:
+        var: pass_git.stdout_lines
+
+    - name: Download kubectl binary
+      get_url:
+        url: "https://dl.k8s.io/release/v1.23.5/bin/linux/amd64/kubectl"
+        dest: "/tmp"
+      tags:
+        - kubectl
+
+    - name: Copy kubectl binary to destination directory
+      copy:
+        src: "/tmp/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: "0755"
+        owner: "root"
+        group: "root"
+        remote_src: true
+      with_items:
+        - kubectl

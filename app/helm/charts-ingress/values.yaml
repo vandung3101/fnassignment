@@ -1,0 +1,23 @@
+backend:
+  name: nodejs-backend
+  replicas: 1
+  image: acrw678.azurecr.io/w7/be
+  port: 3000
+
+frontend:
+  name: angular-frontend
+  replicas: 2
+  image: acrw678.azurecr.io/w7/fe:v2
+  port: 4200
+
+phppgadmin:
+  name: phppgadmin
+  replicas: 1
+  image: dockage/phppgadmin
+  port: 80
+
+ingress:
+  secretName: aks-ingress-tls
+  frontendHost: frontend.vandung.me
+  backendHost: backend.vandung.me
+  phppgadminHost: phppgadmin.vandung.me

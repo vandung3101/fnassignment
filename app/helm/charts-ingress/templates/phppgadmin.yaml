@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.phppgadmin.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.phppgadmin.name }}
+  replicas: {{ .Values.phppgadmin.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.phppgadmin.name }}
+    spec:
+      containers:
+        - name: {{ .Values.phppgadmin.name }}
+          image: {{ .Values.phppgadmin.image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.phppgadmin.port }}
+          env:
+            - name: PHP_PG_ADMIN_SERVER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: host
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.phppgadmin.name }}
+  labels:
+    app: {{ .Values.phppgadmin.name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.phppgadmin.port }}
+      targetPort: {{ .Values.phppgadmin.port }}
+  selector:
+    app: {{ .Values.phppgadmin.name }}

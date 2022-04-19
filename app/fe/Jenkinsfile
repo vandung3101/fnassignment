@@ -1,0 +1,50 @@
+pipeline {
+    agent {
+        label "kube"
+    }
+
+    environment {
+        ARTIFACT_REPOSITORY = "acrw678.azurecr.io"
+        CREDENTIAL_ID = "acr"
+        BUILD_IMAGE = "acrw678.azurecr.io/fe:${GIT_COMMIT}"
+    }
+
+    stages {
+        stage ("Validate") {
+            steps {
+                sh "docker version"
+            }
+        }
+
+        stage ("Build docker image FE nodejs") {
+            steps {
+                sh "docker build -t ${BUILD_IMAGE} ."
+            }
+        }
+
+        stage ("Push docker image to ACR") {
+            steps {
+                withDockerRegistry([credentialsId: "${CREDENTIAL_ID}", url: "http://${ARTIFACT_REPOSITORY}"]) {
+                    sh "docker push ${BUILD_IMAGE}"
+                }
+            }
+        }
+
+        stage ("Deploy new images to AKS") {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECRED')]) {
+                    sh "cat $KUBECRED > ~/.kube/config"
+                    sh "kubectl set image deployment/nodejs-backend nodejs-backend=${BUILD_IMAGE} -n ingress-basic"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace'
+            sh "docker rmi ${BUILD_IMAGE} || true"
+            deleteDir() 
+        }
+    }
+}

@@ -1,0 +1,12 @@
+- name: "Install jenkins-slave on remote hosts using created 'Username with password' credentials"
+  hosts: all
+
+  roles:
+    - role: jenkins-slave-role
+      vars:
+        master_host: "11.1.0.4"
+        slave_linux_jenkins_cred_id: "slave"
+        slave_linux_jenkins_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCluEpaZflsnk4o5IwQtk0iFI+5ORAKE/WQxWbUtqXILeSL3qke7kBnQvw0JQHr7BHltpMoTSsE7m0iZflY+b/IqRzZxOr0g0xjUCHLzB+hiUkTYrGFG2iFceXVzXzRE17xYEeGC1iXKpuggIjGV3xBz3LmczOfcPVWTWs4H4eCvwb8Bv72JNfIh8EL6kILEPe+VHGSNjxX8uufjDs/4Lhj1mR6dNtop1XEwZqMAOfuNsQQdWEmdcf+Lxpi+/61ZTgXiCrbbyUWljisVnFKDTR75AUUrAjfrmxktdakYWNJE36FTo1iTBrOpb+jV5QuAxz7yZCdqMlf3E9k4wyN6Zij vandungng3101@gmail.com
+        slave_linux_jenkins_username: "new_user"
+        # slave_linux_jenkins_password: "new_password"
+        slave_agent_name: "kube"
