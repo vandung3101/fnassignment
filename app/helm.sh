@@ -14,9 +14,12 @@ az acr import --name $REGISTRY_NAME --source $SOURCE_REGISTRY/$CONTROLLER_IMAGE:
 az acr import --name $REGISTRY_NAME --source $SOURCE_REGISTRY/$PATCH_IMAGE:$PATCH_TAG --image $PATCH_IMAGE:$PATCH_TAG
 az acr import --name $REGISTRY_NAME --source $SOURCE_REGISTRY/$DEFAULTBACKEND_IMAGE:$DEFAULTBACKEND_TAG --image $DEFAULTBACKEND_IMAGE:$DEFAULTBACKEND_TAG
 
+az acr import --name $REGISTRY_NAME --source docker.io/vandung3101/be -t be 
+az acr import --name $REGISTRY_NAME --source docker.io/vandung3101/fe -t fe
 
-docker push acrw678.azurecr.io/w7/be
-docker push acrw678.azurecr.io/w7/fe:v2
+
+# docker push acrw678.azurecr.io/w7/be
+# docker push acrw678.azurecr.io/w7/fe:v2
 
 # helm uninstall nginx-ingress -n ingress-basic   
 

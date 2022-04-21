@@ -410,6 +410,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location            = var.location-2
   resource_group_name = var.resource_group_name
   dns_prefix          = "aks"
+  kubernetes_version = "1.21.9"
   default_node_pool {
     name                = "np"
     vm_size             = "Standard_D2_v2"
@@ -452,7 +453,6 @@ resource "azurerm_role_assignment" "acrtoaks" {
 
   provisioner "local-exec" {
     command = <<EOT
-      docker login -p "${azurerm_container_registry.acr.admin_password}" -u "${azurerm_container_registry.acr.admin_username}" "${azurerm_container_registry.acr.login_server}"
       chmod +x ./app/helm.sh
       ./app/helm.sh
     EOT
@@ -470,7 +470,6 @@ resource "azurerm_dns_a_record" "vandung" {
   zone_name           = azurerm_dns_zone.vandung.name
   ttl                 = 300
   target_resource_id  = var.gateway-public-id
-
 }
 
 
