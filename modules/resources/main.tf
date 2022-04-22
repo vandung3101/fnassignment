@@ -280,8 +280,10 @@ resource "azurerm_application_gateway" "app-gateway" {
 
 
   backend_address_pool {
-    name  = "aks-pool"
-    fqdns = ["aks-vandung-ingress.${var.location-2}.cloudapp.azure.com"]
+    name = "aks-pool"
+    ip_addresses = [
+      "10.0.1.200",
+    ]
   }
 
   http_listener {
@@ -397,6 +399,17 @@ resource "azurerm_postgresql_virtual_network_rule" "postgresql-vnet-rule" {
   ignore_missing_vnet_service_endpoint = true
 }
 
+resource "azurerm_user_assigned_identity" "aks-identity" {
+  name                = "aks-identity"
+  resource_group_name = var.resource_group_name
+  location            = var.location-2
+}
+
+resource "azurerm_role_assignment" "aks-role-assignment" {
+  scope                = var.aks-subnet-id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.aks-identity.principal_id
+}
 resource "azurerm_container_registry" "acr" {
   name                = "acrw678"
   resource_group_name = var.resource_group_name
@@ -410,7 +423,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location            = var.location-2
   resource_group_name = var.resource_group_name
   dns_prefix          = "aks"
-  kubernetes_version = "1.21.9"
+  kubernetes_version  = "1.21.9"
   default_node_pool {
     name                = "np"
     vm_size             = "Standard_D2_v2"
@@ -427,7 +440,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
     ]
   }
   identity {
-    type = "SystemAssigned"
+    type = "UserAssigned"
+    identity_ids = [
+      azurerm_user_assigned_identity.aks-identity.id,
+    ]
   }
 
   network_profile {
@@ -442,6 +458,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
+resource "azurerm_storage_account" "waf-logs" {
+  name                = "waflogs11110"
+  resource_group_name = var.resource_group_name
+  location            = var.location-2
+  account_tier        = "Standard"
+  account_replication_type = "LRS"
+}
 resource "azurerm_role_assignment" "acrtoaks" {
   depends_on = [
     azurerm_postgresql_virtual_network_rule.postgresql-vnet-rule,

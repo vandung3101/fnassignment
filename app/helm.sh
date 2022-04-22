@@ -25,7 +25,7 @@ az acr import --name $REGISTRY_NAME --source docker.io/vandung3101/fe -t fe
 
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
-helm install nginx-ingress ingress-nginx/ingress-nginx \
+helm install nginx-ingress ingress-nginx/ingress-nginx -f app/internal-ingress.yaml \
     --version 4.0.13 \
     --namespace ingress-basic --create-namespace \
     --set controller.replicaCount=2 \
@@ -43,8 +43,8 @@ helm install nginx-ingress ingress-nginx/ingress-nginx \
     --set defaultBackend.image.registry="acrw678.azurecr.io" \
     --set defaultBackend.image.image="defaultbackend-amd64" \
     --set defaultBackend.image.tag="1.5" \
-    --set defaultBackend.image.digest="" \
-    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-dns-label-name"="aks-vandung-ingress"
+    --set defaultBackend.image.digest="" 
+    # --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-dns-label-name"="aks-vandung-ingress"
 
 
 kubectl create secret tls aks-ingress-tls \
@@ -56,12 +56,12 @@ kubectl create secret tls aks-ingress-tls \
 
 helm install app ./app/helm/charts-ingress -n ingress-basic
 
-helm upgrade ingress-nginx ingress-nginx \
---repo https://kubernetes.github.io/ingress-nginx \
---namespace ingress-nginx \
---set controller.metrics.enabled=true \
---set-string controller.podAnnotations."prometheus\.io/scrape"="true" \
---set-string controller.podAnnotations."prometheus\.io/port"="10254"
+# helm upgrade ingress-nginx ingress-nginx \
+# --repo https://kubernetes.github.io/ingress-nginx \
+# --namespace ingress-basic \
+# --set controller.metrics.enabled=true \
+# --set-string controller.podAnnotations."prometheus\.io/scrape"="true" \
+# --set-string controller.podAnnotations."prometheus\.io/port"="10254"
 
 kubectl apply -f https://download.newrelic.com/install/kubernetes/pixie/latest/px.dev_viziers.yaml && \
 kubectl apply -f https://download.newrelic.com/install/kubernetes/pixie/latest/olm_crd.yaml && \
